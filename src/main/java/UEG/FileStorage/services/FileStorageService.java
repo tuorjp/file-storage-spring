@@ -65,6 +65,7 @@ public class FileStorageService {
     }
   }
 
+  // método que carrega um arquivo do storage como um Resource
   public Resource loadFileAsResource(String fileName) {
     try {
       // tenta encontrar o arquivo dentro do storage
