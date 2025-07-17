@@ -2,11 +2,13 @@ package UEG.FileStorage.controllers;
 
 import UEG.FileStorage.controllers.dto.UploadFileResponseDTO;
 import UEG.FileStorage.services.FileStorageService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -33,5 +35,24 @@ public class FileUploadTestController {
     responseDTO.setSize(file.getSize());
 
     return responseDTO;
+  }
+
+  @GetMapping("/download/{fileName:.+}") // regex que garante a leitura da extensão do arquivo, não só o nome
+  public ResponseEntity<Resource> downloadFile(
+    @PathVariable String fileName,
+    HttpServletRequest request
+  ) {
+    Resource resource = this.fileStorageService.loadFileAsResource(fileName);
+    String contentType = request.getServletContext().getMimeType(resource.getFilename());
+
+    if(contentType == null) {
+      contentType = "application/octet-stream";
+    }
+
+    return ResponseEntity
+        .ok()
+        .contentType(MediaType.parseMediaType(contentType))
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"") // attachment para download
+        .body(resource);
   }
 }
