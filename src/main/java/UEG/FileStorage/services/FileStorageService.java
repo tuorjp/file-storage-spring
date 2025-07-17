@@ -1,15 +1,19 @@
 package UEG.FileStorage.services;
 
 import UEG.FileStorage.configs.FileStorageProperties;
+import UEG.FileStorage.exceptions.FileNotFoundInStorageException;
 import UEG.FileStorage.exceptions.FileStorageCreationException;
 import UEG.FileStorage.exceptions.InvalidFileName;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -58,6 +62,22 @@ public class FileStorageService {
       return originalFileName;
     } catch (IOException e) {
       throw new FileStorageCreationException("Não foi possível salvar o arquivo");
+    }
+  }
+
+  public Resource loadFileAsResource(String fileName) {
+    try {
+      // tenta encontrar o arquivo dentro do storage
+      Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
+      Resource resource = new UrlResource(filePath.toUri()); //UrlResource pode lançar uma MalformedURLException
+
+      if(resource.exists()) {
+        return resource;
+      } else {
+        throw new FileNotFoundInStorageException("Arquivo não encontrado no storage: " + fileName);
+      }
+    } catch (MalformedURLException e) {
+      throw new FileNotFoundInStorageException("Arquivo não encontrado no storage: " + fileName);
     }
   }
 }
